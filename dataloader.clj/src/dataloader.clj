@@ -10,11 +10,15 @@
   ["-h" "--help" "Show help" :flag true :default false]
   ["-w" "--raw_date_fmt" "The date format in the data file" 
     :parse-fn #(re-find #"" %) :default "%m/%d/%Y %I:%M:%S %p"]))
+
+(defn fnm-kw [path] (-> path (split #"[/\\]") last (split #"\.") first keyword))
     
-(defn parse-mp [rt [t-nm tf-nm tf-tp tf-dft vmp s-nm sf-nm]] 
+(defn parse-mp [rt [f1 f2 f3 f4 f5 f6 f7]]
+            (let [[t-nm tf-nm tf-tp s-nm sf-nm] (map keyword [f1 f2 f3 f6 f7])
+                  tf-dft f4 vmp f5]
             (if (or (seq rt) (and (seq t-nm) (-> rt last first (= t-nm))))
-              (conj rt [t-nm, s-nm, [tf-nm, tf-tp,tf-dft,vmp,sf-nm]])
-              (conj (-> rt drop-last vec) (conj (last rt) [tf-nm, tf-tp,tf-dft,vmp,sf-nm]))))
+              (conj rt [(keyword t-nm), (keyword s-nm), [(keyword tf-nm), (keyword tf-tp),tf-dft,vmp,(keyword sf-nm)]])
+              (conj (-> rt drop-last vec) (conj (last rt) [tf-nm, tf-tp,tf-dft,vmp,sf-nm])))))
 
 (defn read-csvf [path encoding] (-> path FileInputStream. (InputStreamReader. encoding) CSVReader. .readAll))
 
@@ -35,7 +39,7 @@
                                   set))
 
 (defn load-csv [path mp opts]
-  (let [snm (-> path (split #"[/\\]") last (split #"\.") first)
+  (let [snm (fnm-kw path)
         usfs (used-sfields snm mp)
         data (read-csvf path (:enc-data opts))
         sfs (->> data first (map #(keyword %)))
