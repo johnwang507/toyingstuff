@@ -4,6 +4,39 @@
   (:import [au.com.bytecode.opencsv.CSVReader]
            [java.io InputStreamReader FileInputStream]))
 
+(defn comm-db [clz subp subn] {:classname clz :subprotocol subp :subname subn})
+
+(def dbs {:sqlserver (fn [host port dbnm user pwd] 
+                        {:classname "com.microsoft.jdbc.sqlserver.SQLServerDriver"
+                         :subprotocol "sqlserver"
+                         :subname (format "//%s:%s;database=%s;user=%s;password=%s" host port dbnm user pwd)})
+          :oracle (fn [host port dbnm user pwd] 
+                        {:classname "oracle.jdbc.driver.OracleDriver"
+                         :subprotocol "oracle"
+                         :subname (format "thin:@%s:%s:%s" host port dbnm)
+                         :user user
+                         :password pwd})
+          :mysql (fn [host port dbnm user pwd] 
+                        {:classname "com.mysql.jdbc.Driver"
+                         :subprotocol "mysql"
+                         :subname (format "//%s:%s/%s" host port dbnm)
+                         :user user
+                         :password pwd})
+          :postgresql (fn [host port dbnm user pwd] 
+                        {:classname "org.postgresql.Driver"
+                         :subprotocol "postgresql"
+                         :subname (format "//%s:%s/%s" host port dbnm)
+                         :user user
+                         :password pwd})
+          :sqlite (fn [host port dbnm user pwd] 
+                        {:classname "org.sqlite.JDBC"
+                         :subprotocol "sqlite"
+                         :subname dbnm}))
+          
+          
+          
+          :mysql :postgresql :sqlite})
+           
 (defn get-args [args]
   "Parse cmdline arguments into "
   (cli args
@@ -46,7 +79,39 @@
         srws (->> data rest (map #(list %1 %2) sfs))]
     (map (fn [idx rw] (->> rw (filter (fn [[k _]] (sfs k))) vec (conj [:rwid idx]))) (range) srws)))
         
+(defn dbspec [opts]
 
+{:classname "com.microsoft.jdbc.sqlserver.SQLServerDriver"
+               :subprotocol "sqlserver"
+               :subname "//db-host:port;database=db-name;user=user;password=password"  
+  
+  {:classname "oracle.jdbc.driver.OracleDriver"  ; must be in classpath
+           :subprotocol "oracle"
+           :subname "thin:@db-host:db-port:db-name" 
+           :user "user"
+           :password "pwd"}
+  
+{:classname "com.mysql.jdbc.Driver" ; must be in classpath
+           :subprotocol "mysql"
+           :subname (str "//" db-host ":" db-port "/" db-name)
+           ; Any additional keys are passed to the driver
+           ; as driver-specific properties.
+           :user "a_user"
+           :password "secret"}))
+           
+{:classname "org.postgresql.Driver" ; must be in classpath
+           :subprotocol "postgresql"
+           :subname (str "//" db-host ":" db-port "/" db-name)
+           ; Any additional keys are passed to the driver
+           ; as driver-specific properties.
+           :user "a_user"
+           :password "secret"}))
+
+{:classname "org.sqlite.JDBC"
+    :subprotocol "sqlite"
+    :subname "db/database.db"})
+    
+    
 (defn resolve [raw-data mapping]
   ())
 
