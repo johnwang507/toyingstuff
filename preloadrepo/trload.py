@@ -40,10 +40,10 @@ def _clear():
     os.chdir('..')
     shutil.rmtree(_farch_id)
 
-def load(line):
+def load(idx, line):
     atype_g, atype_a = map(lambda x:x.strip(),line.split(':'))
     cmd = _cmd % (_mvn, _farch_group, _farch_id, atype_g, atype_a)
-    print 'Init archetype:', atype_g, atype_a
+    print idx, ':', atype_g, ':', atype_a
     if sbp.call(cmd.split(), shell=True):
         print 'Failed init archetype'
         return 1
@@ -64,5 +64,5 @@ if __name__ == '__main__':
         print 'file not exists: "%s"' % arch_file
         sys.exit(1)
     with open(arch_file, 'r') as f:
-        rts = [load(line) for line in f]
+        rts = [load(i, l) for i,l in enumerate(f)]
         print 'Done. Total %d, %d failed.' %(len(rts), sum(rts))
