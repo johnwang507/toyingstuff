@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*- 
+#
+# A simple tool to trigger a Maven Repository Manager(MRM), e.g., Artifactory,to
+# preload libraries. --John Wang(john.wang507@gmail.com)
+#
+# It implements the function by reading from a file listing all Maven archetypes and
+# invoke the system command "mvn archetype:generate" to request the MRM to load
+# libraries from the proxied remote repositories(e.g., http://repo1.maven.org/maven2/).
+#
+# The intention of doing so is to prepare a MRM meant to run in an environment
+# without internet access.
 
 import sys, os, shutil, subprocess as sbp
 
