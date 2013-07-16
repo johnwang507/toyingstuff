@@ -63,6 +63,7 @@ if __name__ == '__main__':
     if not os.path.exists(_arch_file):
         print 'file not exists: "%s"' % _arch_file
         sys.exit(1)
+    start = 0 if len(sys.argv) < 3 else int(sys.argv[2])
     with open(_arch_file, 'r') as f:
-        rts = [load(i, l) for i,l in enumerate(f)]
+        rts = [load(i, l) for i,l in enumerate(f) if i >= start]
         print 'Done. Total %d, %d failed.' %(len(rts), sum(rts))
