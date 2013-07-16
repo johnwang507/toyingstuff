@@ -41,6 +41,7 @@ def _clear():
     shutil.rmtree(_farch_id)
 
 def load(idx, line):
+    sys.stdout.flush()
     atype_g, atype_a = map(lambda x:x.strip(),line.split(':'))
     cmd = _cmd % (_mvn, _farch_group, _farch_id, atype_g, atype_a)
     print idx, ':', atype_g, ':', atype_a
@@ -58,11 +59,10 @@ def load(idx, line):
     return 0
 
 if __name__ == '__main__':
-    if len(sys.argv)>1:
-        arch_file = sys.argv[1]
-    if not os.path.exists(arch_file):
-        print 'file not exists: "%s"' % arch_file
+    _arch_file = sys.argv[1] if len(sys.argv)>1 else _arch_file
+    if not os.path.exists(_arch_file):
+        print 'file not exists: "%s"' % _arch_file
         sys.exit(1)
-    with open(arch_file, 'r') as f:
+    with open(_arch_file, 'r') as f:
         rts = [load(i, l) for i,l in enumerate(f)]
         print 'Done. Total %d, %d failed.' %(len(rts), sum(rts))
