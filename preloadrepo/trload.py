@@ -43,6 +43,7 @@ def get_args():
  archetype group id and the artifact id seperated by a semicolon (:). E.g., "com.github.searls:jasmine-archetype"''')
     parser.add_argument('-b','--begin',type=int, default=0, help="The idx of the record in the AR file from which to start(inclusive).")
     parser.add_argument('-e','--end',type=int, default=sys.maxint, help="The idx of the record in the AR file with which to stop(exclusive).")
+    parser.add_argument('idxes', metavar='idx', type=int, nargs='*', help='The indexes specified individually to load. The "-b" and "-e" option will be ignored by this presence.')
     return parser.parse_args()
 
 def _clear():
@@ -73,7 +74,8 @@ if __name__ == '__main__':
         print 'file not exists: "%s"' % args.ar_file
         sys.exit(1)
     with open(args.ar_file, 'r') as f:
-        rts = [(i,load(i, l)) for i,l in enumerate(f) if i >= args.begin and i < args.end]
+        cond = lambda x: (x in args.idxes) if args.idxes else lambda x:(x >= args.begin and x < args.end)
+        rts = [(i,load(i, l)) for i,l in enumerate(f) if cond(i)]
         failed = reduce(lambda x,y:x+y[1], rts, 0)
         print 'Done. Total %d, %d failed.' % (len(rts), failed)
         if failed:
