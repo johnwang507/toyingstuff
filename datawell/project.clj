@@ -1,4 +1,4 @@
-(defproject datawell.clj "0.1.0-SNAPSHOT"
+(defproject datawell "0.1.0-SNAPSHOT"
     :description "A tool emitting data records. It can be used to generate test data."
     :url "https://github.com/johnwang507/toyingstuff/tree/master/datawell.clj"
     :license {:name "Eclipse Public License"
