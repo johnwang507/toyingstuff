@@ -1,6 +1,6 @@
-(ns datawell.clj-test
+(ns datawell.main-test
   (:require [clojure.test :refer :all]
-            [datawell.clj :refer :all]))
+            [datawell.main :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
