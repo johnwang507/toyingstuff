@@ -12,7 +12,11 @@
     ["-a" "--alphabet" "If presented, the random string is generated only from alphabet(no special char e.g., + )"
     :default false]))
 
-(defn gen-col [seeds maxlen fixed-len]
+(defn gen-col
+  "Compose a string with no more than *maxlen* long, by randomly picking characters from the *seeds*.
+  If *fixed-len* is true, the strings generated every times will all be *maxlen* long, 
+  otherwise their length are random. The *seeds* is a sequence of Integers corresponding to ASCII characters."
+  [seeds maxlen fixed-len]
   (let [len (if fixed-len
     maxlen
     (inc (rand-int maxlen)))]
