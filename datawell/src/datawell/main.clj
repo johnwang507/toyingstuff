@@ -1,7 +1,8 @@
 (ns datawell.main
   (:gen-class)
-  (:use [clojure.tools.cli :only [cli]
-        datawell.gen]))
+  (:use [[clojure.tools.cli :only [cli]]
+        [clojure.java.io :only [file]]
+        [datawell.gen.plain]]))
 
 (defn- run
   "Print out the options and the arguments"
@@ -31,4 +32,15 @@
       (do
         (println "")
         (run opts args))
-      (println banner))))
+      (println banner
+
+(defn- load-all []
+  (->> "gen"
+      file
+      .listFiles
+      (map #(.getName %))
+      (filter #(re-matches #".*\.clj" %))
+      (map #(drop-last 4 %))
+      (map #(concat "gen/" %))
+      (map #(apply str %))
+      (map load)))

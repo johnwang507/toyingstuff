@@ -22,7 +22,7 @@
 ;     ["-a" "--alphabet" "If presented, the random string is generated only from alphabet(no special char e.g., + )"
 ;     :default false]))
 
-(defn gen [idx pre {:keys [col-number col-width fixed-len alphabet]} args]
+(defn spout [idx pre {:keys [col-number col-width fixed-len alphabet]} args]
   (let [seeds (if alphabet
     (concat (range 65 91) (range 97 123))
     (range 32 127))]
