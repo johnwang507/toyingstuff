@@ -3,7 +3,7 @@
   (:use 
     [clojure.tools.cli :only [cli]]))
 
-(defn run
+(defn- run
   "Print out the options and the arguments"
   [opts args]
   (println (str "Options:\n" opts "\n\n"))
