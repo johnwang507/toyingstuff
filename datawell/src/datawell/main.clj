@@ -1,13 +1,14 @@
 (ns datawell.main
   (:gen-class)
-  (:use 
-    [clojure.tools.cli :only [cli]]))
+  (:use [clojure.tools.cli :only [cli]
+        datawell.gen]))
 
 (defn- run
   "Print out the options and the arguments"
   [opts args]
   (println (str "Options:\n" opts "\n\n"))
   (println (str "Arguments:\n" args "\n\n")))
+
 
 
 (defn -main [& args]
