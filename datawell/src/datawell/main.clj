@@ -1,46 +1,37 @@
 (ns datawell.main
-  (:gen-class)
-  (:use [[clojure.tools.cli :only [cli]]
+  (:use [clojure.tools.cli :only [cli]]
         [clojure.java.io :only [file]]
-        [datawell.gen.plain]]))
+        [clojure.string :only [join]]
+        [datawell.gen.plain])
+  (:gen-class))
 
-(defn- run
-  "Print out the options and the arguments"
-  [opts args]
-  (println (str "Options:\n" opts "\n\n"))
-  (println (str "Arguments:\n" args "\n\n")))
-
-
-
-(defn -main [& args]
-  (let [[opts args banner]
-        (cli args
-             ["-h" "--help" "Show help" :flag true :default false]
-             ["-d" "--delay" "Delay between messages (seconds)" :default 2]
-             ["-f" "--from" "REQUIRED: From address)"]
-             ["-e" "--email-file" "REQUIRED: Email addresses FILE)"]
-             ["-s" "--subject" "REQUIRED: Message subject"]
-             ["-m" "--message-file" "REQUIRED: Message FILE"]
-             ["-b" "--bcc" "BCC address"] ;; optional
-             ["-t" "--test" "Test mode does not send" :flag true :default false]
-             )]
-    (when (:help opts)
-      (println banner)
-      (System/exit 0))
-    (if 
-      (some empty? [args opts])
-      (do
-        (println "")
-        (run opts args))
-      (println banner
-
-(defn- load-all []
-  (->> "gen"
+(def ^:private gens ; All available generators in the "gen" folder
+  (->> "gens"
       file
       .listFiles
       (map #(.getName %))
       (filter #(re-matches #".*\.clj" %))
       (map #(drop-last 4 %))
-      (map #(concat "gen/" %))
-      (map #(apply str %))
-      (map load)))
+      (map #(apply str %))))
+
+(map #(load (str "gen/" %)) gens) ; Load all generators
+
+(defn- pargs [args]
+  (cli args
+    ["-h" "--help" "Show help. If a generator is specified, show options for that generator"]
+    ["-g" "--generator" (str "The generator to use for generating records. Available: " (join "," gens)) :default "plain"]))
+
+(defn- run
+  "Print out the options and the arguments"
+  [opts args]
+  (println (str "Options:\n" opts))
+  (println (str "Arguments:\n" args)))
+
+(defn -main [& args]
+  (let [[opts args banner] (pargs args)]
+    (when (:help opts)
+      (println banner)
+      (System/exit 0))
+    (if (every? empty? [args opts])
+      (println banner)
+      (do (run opts args)))))
