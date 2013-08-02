@@ -1,7 +1,5 @@
 (ns datawell.gen.plain)
 
-(defn- pint [x] (Integer. x))
-
 (defn- gen-col
   "Compose a string with no more than *maxlen* long, by randomly picking characters from the *seeds*.
   If *fixed-len* is true, the strings generated every times will all be *maxlen* long, 
