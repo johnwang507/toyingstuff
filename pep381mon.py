@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
+# A tool to monitor pep381client(https://bitbucket.org/loewis/pep381client) process to initiate a local mirror of the official Pypi server.
 
 import sys,os, time, subprocess as sbp
 
