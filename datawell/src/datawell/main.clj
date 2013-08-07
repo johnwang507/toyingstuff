@@ -6,40 +6,36 @@
         [ring.util.response :only [response]])
   (:gen-class))
 
+(def ^:private roof (atom -1))
+(def ^:private counter (atom 0))
+
 (defn- gen-col
   "Compose a string with no more than *maxlen* long, by randomly picking characters from the *seeds*.
   If *fixedlen* is true, the strings generated every times will all be *maxlen* long, 
   otherwise their length are random. The *seeds* is a sequence of Integers corresponding to ASCII characters."
   [seeds maxlen fixedlen]
-  (let [len (if fixedlen
-    maxlen
-    (inc (rand-int maxlen)))]
+  (let [len (if fixedlen maxlen (inc (rand-int maxlen)))]
   (apply str (repeatedly len #(->> seeds (map char) rand-nth)))))
 
-(defn spout [{:keys [colnum colsize fixedlen alphabet]}]
-  (let [seeds (if alphabet
-    (concat (range 65 91) (range 97 123))
-    (range 32 127))]
-  (repeatedly colnum #(gen-col seeds colsize fixedlen))))
+(defn spout [{:keys [colnum colsize fixedlen alphabet limit]}]
+  (let [seeds (if alphabet (concat (range 65 91) (range 97 123)) (range 32 127))]
+      (repeatedly colnum #(gen-col seeds colsize fixedlen))))
+
+(defn limitspout [f]
+  (if (or (< roof 0) (< counter roof))
+      (do (swap! counter inc)
+          (f))
+      (System/exit 0)))
 
 (defn svc-http [opts args]
-  (let [handler (fn [request] 
-                    (response (spout opts)))]
-    (run-jetty handler {:port (:port opts)})))
+    (run-jetty (fn [request] (limitspout #(response (spout opts)))) {:port (:port opts)}))
+
+(defn svc-stdout [opts args] (limitspout #(println (spout opts))))
 
 (defn svc-socket [opts args]
-  (let [handler 1]
-    1))
+  (run-socket handler {:port (:port opts)})) ;go here 
 
-(defn svc-zeromq [opts args]
-  (let [handler 1]
-    1))
-
-(defn svc-stdout [opts args]
-  (let [func (fn [] 
-                ())])
-  )
-
+(defn svc-zeromq [opts args] 1);TODO 
 
 (def ifc-types [1 #'svc-stdout 2 #'svc-http 3 #'svc-socket 4 #'svc-zeromq])
 
@@ -64,4 +60,6 @@
       (println banner)
       (System/exit 0))
     (let [svc (->> opts :type (.indexOf ifc-types) inc (nth ifc-types))]
+      (reset! roof (:limit opts))
       (meta svc))))
+
