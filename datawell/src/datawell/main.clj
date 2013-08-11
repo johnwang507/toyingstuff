@@ -3,7 +3,9 @@
         [clojure.java.io :only [file]]
         [clojure.string :only [join]]
         [ring.adapter.jetty :only [run-jetty]]
-        [ring.util.response :only [response]])
+        [ring.util.response :only [response]]
+        [clojure.contrib.server-socket])
+  (:import [java.io BufferedReader InputStreamReader OutputStreamWriter])
   (:gen-class))
 
 (def ^:private roof (atom -1))
@@ -21,16 +23,16 @@
   (let [seeds (if alphabet (concat (range 65 91) (range 97 123)) (range 32 127))]
       (repeatedly colnum #(gen-col seeds colsize fixedlen))))
 
-(defn limitspout [f]
+(defn limit-spout [opts]
   (if (or (< roof 0) (< counter roof))
       (do (swap! counter inc)
-          (f))
+          (spout opts))
       (System/exit 0)))
 
 (defn svc-http [opts args]
-    (run-jetty (fn [request] (limitspout #(response (spout opts)))) {:port (:port opts)}))
+    (run-jetty (fn [request] (response (limit-spout opts))) {:port (:port opts)}))
 
-(defn svc-stdout [opts args] (limitspout #(println (spout opts))))
+(defn svc-stdout [opts args] (repeatedly #(println (limit-spout opts))))
 
 (defn svc-socket [opts args]
   (run-socket handler {:port (:port opts)})) ;go here 
