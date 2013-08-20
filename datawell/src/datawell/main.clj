@@ -1,6 +1,5 @@
 (ns datawell.main
   (:use [clojure.tools.cli :only [cli]]
-        [clojure.java.io :only [file]]
         [clojure.string :only [join]]
         [ring.adapter.jetty :only [run-jetty]]
         [ring.util.response :only [response]]
