@@ -23,7 +23,10 @@ I built it as a practice of studying Clojure, as well as a data source for my st
      -l, --colength                 15       How many characters can a column hold, e.g., the column size.
      -f, --no-fixedlen, --fixedlen  true     Should the size of every column be the same. 
      -s, --seperator                (tab)  What character will be the seperator for columns. This character will not be in characters seeds.                              
-     -w, --no-words, --words        true     Use only lowcase alphabet character as seeds to generate random string    . Otherwise all visiable characters will be used.                                                                      
+     -w, --no-words, --words        true     Use only lowcase alphabet character as seeds to generate random string    . Otherwise all visiable characters will be used.
+
+Generate 5 records with 5 columns each:
+
     JohnsMM:target john$ java -jar datawell-0.1.0-standalone.jar -n 5 -m 5
     nmlpxbpivmztoma xktetblnmyvxhdl xtgmzlykrngzcsb jkprwbgvgaxmiqe sezjpzuudckvseh
     arsuwunbukyedbi pdfqixewolehlhd tetjdgjaxbdnmbg pvpdpubxqhdobvl hvonlphsnlmsijh
