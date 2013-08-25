@@ -27,14 +27,23 @@ I built it as a practice of studying Clojure, as well as a data source for my st
 
 To generate 5 random records with 5 columns each:
 
-    JohnsMM:target john$ java -jar datawell-0.1.0-standalone.jar -n 5 -m 5
-    nmlpxbpivmztoma xktetblnmyvxhdl xtgmzlykrngzcsb jkprwbgvgaxmiqe sezjpzuudckvseh
-    arsuwunbukyedbi pdfqixewolehlhd tetjdgjaxbdnmbg pvpdpubxqhdobvl hvonlphsnlmsijh
-    bgqrhvcbjqeeuwq asiwkptwyephimu zmjdgdabdwszeyv mbkdsicjsxhvrzg ynfjmpfmvgntdxj
-    pivvaqxnvhsnhvm arbxlhfllyvmnbb vzwjwyvjrstcimm tnukaklrrbtznru tdsjwgqhgszstcx
-    xzfnssftchrctsr wzqmwmsduhheken kopqlglvgdbvkny olxynbjhswuvnnw szpruomhvqryarf
+    JohnsMM:target john$ java -jar datawell-0.1.0-standalone.jar --no-fixedlen -n 5 -l 5
+    rtfp   gm     lvmgq    drus    lwdjp
+    zwf    rqj    mhdwe    ezhc    lpa
+    numr   hhle   eic      zci     d
+    sszv   fnad   i        lta     aqr
+    d      wduh   imyz     bdni    lf
 
     JohnsMM:target john$ 
+
+To start a http service on port 9000 which response a random record on every request:
+
+    JohnsMM:target john$ java -jar datawell-0.1.0-standalone.jar -t http -p 9000
+    2013-08-25 13:30:44.765:INFO:oejs.Server:jetty-7.x.y-SNAPSHOT
+    2013-08-25 13:30:44.904:INFO:oejs.AbstractConnector:Started SelectChannelConnector@0.0.0.0:9000
+
+    JohnsMM:target john$ 
+
 
 ## License
 
