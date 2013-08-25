@@ -22,18 +22,27 @@
       (join seperator (repeatedly colnum #(gen-col seeds colength fixedlen)))))
 
 (defn print-rows [opts]
-  (let [{:keys [maxnum interval]} opts]
+  (let [{:keys [maxnum interval indexnum seperator]} opts]
     (loop [x 0N]
       (if (< x maxnum)
-          (do (-> opts gen-row println) (Thread/sleep interval) (recur (inc x)))))))
-
-(defn svc-http [opts]
-    (run-jetty (fn [request] (response (gen-row opts))) {:port (:port opts)}))
+          (do (->> opts gen-row (str (if indexnum (str x seperator) "")) println)
+              (Thread/sleep interval)
+              (recur (inc x)))))))
 
 (defn svc-stdout [opts] (print-rows opts))
 
 (defn svc-socket [opts]
   (create-server (:port opts) (fn [_ out] (binding [*out* (PrintWriter. out)] (print-rows opts)))))
+
+(defn svc-http [opts]
+  (let [{:keys [indexnum seperator port]} opts
+        idx (atom 0N)]
+    (run-jetty 
+      (fn [request] 
+        (if indexnum
+            (response (str (swap! idx inc) seperator (gen-row opts)))
+            (response (gen-row opts))))
+      {:port port})))
 
 (def svc-type ["stdout" "http" "socket"])
 
@@ -48,6 +57,7 @@
       ["-n" "--colnum" "How many columns in a row." :parse-fn pint :default 9]
       ["-l" "--colength" "How many characters can a column hold, e.g., the column size." :parse-fn pint :default 15]
       ["-f" "--fixedlen" "Should the size of every column be the same." :flag true :default true]
+      ["-x" "--indexnum" "Emit index number for every records. Ignored in http service." :flag true :default false]
       ["-s" "--seperator" "What character will be the seperator for columns. This character will not be in characters seeds." :default "\t"]
       ["-w" "--words" "Use only lowcase alphabet character as seeds to generate random string. Otherwise all visiable characters will be used." :flag true :default true])))
 
