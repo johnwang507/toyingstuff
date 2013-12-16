@@ -39,7 +39,7 @@ from datetime import datetime, timedelta
 import copy
 
 params =(("to_char(created_on, 'YYYYMMDD')", "<='%s'" % closest.replace('-','')), #closest is a string like '2013-08-13'
-         ('is_private',       " is False "),
+         ('is_private',       "is False"),
          ('tracker_id',       tracker_id),
          ('project_id',       project_id),
          ('category_id',      category_id),
@@ -61,7 +61,7 @@ journal_sql="""SELECT jn.id jid, jn.created_on crn,
 journal_q = plpy.prepare(journal_sql, ['int', 'timestamp'])
 
 def sql_where(params):
-    pfn = lambda fnm, pstr: [fnm+ele.strip() for ele in pstr.split(',')]
+    pfn = lambda fnm, pstr: [fnm+' '+ele.strip() for ele in pstr.split(',')]
     return ' AND '.join(sum([pfn(f,v) for f,v in params if v],[]))
 
 day_issues = plpy.execute("SELECT * FROM issues WHERE %s" % sql_where(params))
@@ -81,7 +81,7 @@ def iss_vals(iss):
                 'done_ratio', 'estimated_hours', 'parent_id', 'root_id', 'closed_on'])
 
 for x in range(days):
-    dt = closest_dt - datetime.timedelta(days=x)
+    dt = closest_dt - timedelta(days=x)
     day_issues = [iss for iss in day_issues if iss['created_on'][:10] <= dt.strftime('%Y-%m-%d')]
     day_issues = [recall_state(iss, dt) for iss in day_issues]
     for iss in day_issues:
