@@ -14,7 +14,7 @@ return [datetime.strptime(upto,'%Y-%m-%d') - timedelta(days=i) for i in range(da
 #                                          fixed_version_id default null,
 #                                          author_id default null)
 # RETURNS TABLE ( theday            date,
-#                 isid              integer,  
+#                 id                integer,  
 #                 tracker_id        integer,  
 #                 project_id        integer,    
 #                 due_date          date,     
@@ -31,12 +31,15 @@ return [datetime.strptime(upto,'%Y-%m-%d') - timedelta(days=i) for i in range(da
 #                 done_ratio        integer,  
 #                 estimated_hours   double precision,
 #                 parent_id         integer,  
-#                 root_id           integer 
+#                 root_id           integer,
+#                 closed_on         timestamp 
 #                )
 # AS $fn$
 from datetime import datetime, timedelta
+import copy
 
 params =(("to_char(created_on, 'YYYYMMDD')", "<='%s'" % closest.replace('-','')), #closest is a string like '2013-08-13'
+         ('is_private',       "is False"),
          ('tracker_id',       tracker_id),
          ('project_id',       project_id),
          ('category_id',      category_id),
@@ -45,48 +48,42 @@ params =(("to_char(created_on, 'YYYYMMDD')", "<='%s'" % closest.replace('-',''))
          ('priority_id',      priority_id),
          ('fixed_version_id', fixed_version_id),
          ('author_id',        author_id))
-closest_d = datetime.strptime(closest,'%Y-%m-%d')
+closest_dt = datetime.strptime(closest,'%Y-%m-%d')
+journal_sql="""SELECT jn.id jid, jn.created_on crn, 
+                      jnd.prop_key prp, jnd.old_value ov, jnd.value nv
+               FROM   journals jn, journal_details jnd
+               WHERE  jn.id = jnd.journal_id AND
+                      jn.journalized_type = 'Issue' AND
+                      jnd.property = 'attr' AND
+                      jn.journalized_id = $1 AND
+                      jn.created_on > $2
+               ORDER BY crn desc """
+journal_q = plpy.prepare(journal_sql, ['int', 'timestamp'])
 
 def sql_where(params):
     pfn = lambda fnm, pstr: [fnm+ele.strip() for ele in pstr.split(',')]
     return ' AND '.join(sum([pfn(f,v) for f,v in params if v],[]))
 
-day_issues = plpy.execute("SELECT * FROM issues WHERE %s" % sql_where(params)) #very return row is a dict
+day_issues = plpy.execute("SELECT * FROM issues WHERE %s" % sql_where(params))
 
-def recall_state(iss,recall_date): #todo
-    return 1
+def recall_state(iss,to_datetime):
+    todt = to_datetime.strftime('%Y-%m-%d') + ' 23:59:59'
+    jnds = plpy.execute(journal_q, [iss['id'], todt])
+    org_state = copy.deepcopy(iss)
+    [org_state.update({row['prp']: row['ov']}) for row in jnds]
+    return org_state    
+
+def iss_vals(iss):
+    return map(lambda x:iss.get(x,None),
+                ['id', 'tracker_id', 'project_id', 'due_date', 'category_id',
+                'status_id', 'assigned_to_id', 'priority_id', 'fixed_version_id', 
+                'author_id', 'lock_version', 'created_on', 'updated_on', 'start_date',
+                'done_ratio', 'estimated_hours', 'parent_id', 'root_id', 'closed_on'])
 
 for x in range(days):
-    dt = closest_d - datetime.timedelta(days=x)
+    dt = closest_dt - datetime.timedelta(days=x)
+    day_issues = [iss for iss in day_issues if iss['created_on'][:10] <= dt.strftime('%Y-%m-%d')]
     day_issues = [recall_state(iss, dt) for iss in day_issues]
     for iss in day_issues:
-        yield [dt] + list(map(lambda x:iss.values(), #go here
-
-            ['id', 'tracker_id', 'project_id', 'due_date', 'category_id', 'status_id', 'assigned_to_id', 'priority_id', 'fixed_version_id', 'author_id', 'lock_version', 'created_on', 'updated_on', 'start_date', 'done_ratio', 'estimated_hours', 'parent_id', 'root_id']))
-return
-
-
-#  id               | integer                     | not null default nextval('issues_id_seq'::regclass) | plain    | 
-#  tracker_id       | integer                     | not null default 0                                  | plain    | 
-#  project_id       | integer                     | not null default 0                                  | plain    | 
-#  subject          | character varying(255)      | not null default ''::character varying              | extended | 
-#  description      | text                        |                                                     | extended | 
-#  due_date         | date                        |                                                     | plain    | 
-#  category_id      | integer                     |                                                     | plain    | 
-#  status_id        | integer                     | not null default 0                                  | plain    | 
-#  assigned_to_id   | integer                     |                                                     | plain    | 
-#  priority_id      | integer                     | not null default 0                                  | plain    | 
-#  fixed_version_id | integer                     |                                                     | plain    | 
-#  author_id        | integer                     | not null default 0                                  | plain    | 
-#  lock_version     | integer                     | not null default 0                                  | plain    | 
-#  created_on       | timestamp without time zone |                                                     | plain    | 
-#  updated_on       | timestamp without time zone |                                                     | plain    | 
-#  start_date       | date                        |                                                     | plain    | 
-#  done_ratio       | integer                     | not null default 0                                  | plain    | 
-#  estimated_hours  | double precision            |                                                     | plain    | 
-#  parent_id        | integer                     |                                                     | plain    | 
-#  root_id          | integer                     |                                                     | plain    | 
-#  lft              | integer                     |                                                     | plain    | 
-#  rgt              | integer           
-
+        yield [dt] + iss_vals(iss)
 # $fn$ LANGUAGE plpython2u;
