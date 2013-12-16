@@ -11,8 +11,8 @@ return [datetime.strptime(upto,'%Y-%m-%d') - timedelta(days=i) for i in range(da
 #                                          status_id text default null,
 #                                          assigned_to_id text default null,
 #                                          priority_id text default null,
-#                                          fixed_version_id default null,
-#                                          author_id default null)
+#                                          fixed_version_id text default null,
+#                                          author_id text default null)
 # RETURNS TABLE ( theday            date,
 #                 id                integer,  
 #                 tracker_id        integer,  
@@ -39,7 +39,7 @@ from datetime import datetime, timedelta
 import copy
 
 params =(("to_char(created_on, 'YYYYMMDD')", "<='%s'" % closest.replace('-','')), #closest is a string like '2013-08-13'
-         ('is_private',       "is False"),
+         ('is_private',       " is False "),
          ('tracker_id',       tracker_id),
          ('project_id',       project_id),
          ('category_id',      category_id),
