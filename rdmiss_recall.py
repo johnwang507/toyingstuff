@@ -12,7 +12,8 @@ return [datetime.strptime(upto,'%Y-%m-%d') - timedelta(days=i) for i in range(da
 #                                          assigned_to_id text default null,
 #                                          priority_id text default null,
 #                                          fixed_version_id text default null,
-#                                          author_id text default null)
+#                                          author_id text default null,
+#                                          done_ratio text default null)
 # RETURNS TABLE ( theday            date,
 #                 id                integer,  
 #                 tracker_id        integer,  
@@ -47,7 +48,8 @@ params =(("to_char(created_on, 'YYYYMMDD')", "<='%s'" % closest.replace('-',''))
          ('assigned_to_id',   assigned_to_id),
          ('priority_id',      priority_id),
          ('fixed_version_id', fixed_version_id),
-         ('author_id',        author_id))
+         ('author_id',        author_id),
+         ('done_ratio',       done_ratio))
 closest_dt = datetime.strptime(closest,'%Y-%m-%d')
 journal_sql="""SELECT jn.id jid, jn.created_on crn, 
                       jnd.prop_key prp, jnd.old_value ov, jnd.value nv
@@ -70,7 +72,8 @@ def recall_state(iss,to_datetime):
     todt = to_datetime.strftime('%Y-%m-%d') + ' 23:59:59'
     jnds = plpy.execute(journal_q, [iss['id'], todt])
     org_state = copy.deepcopy(iss)
-    [org_state.update({row['prp']: row['ov']}) for row in jnds]
+    [org_state.update({row['prp']: row['ov']}) for row in jnds]# Be careful of the different value types for a column
+    if jnds:org_state.update(updated_on=jnds[0]['crn'])
     return org_state    
 
 def iss_vals(iss):
