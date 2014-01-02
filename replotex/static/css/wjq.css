@@ -1,0 +1,64 @@
+  body{
+    font-family: simsun, sans-serif, Arial;
+    font-size: 14px;
+  }
+
+  textarea#cmd{
+    width:80%;
+  }
+  #cmd,#go{
+    height:60px;
+  }
+  #go{
+    width:80px;
+    vertical-align: top;
+  }
+
+
+  #czone{
+    height:500px;
+    width:100%;
+    /*background: gray;*/
+  }
+
+p#hintdim > span{
+  padding-left:10px; 
+}
+p#msg{
+    display:none;
+    color:red;
+}
+
+#mainp{
+  width: 100%;
+}
+
+#leftp{
+  min-width: 65%;
+}
+
+#rightp{
+  width: 30%;
+  border-left: 1px solid #DDD;
+  padding-left: 15px;
+}
+
+#rightp, #leftp{
+  float: left;
+}
+
+ul#hintl > li > span:first-child{
+  font-weight: bold;
+}
+
+ul#hintl > li{
+  padding: 5px 0 10px 5px;
+  border-top: 1px dotted #ddd;
+}
+ul#hintl > li > span{
+  padding-right: 15px;
+}
+
+form{
+  padding-bottom: 15px;
+}
