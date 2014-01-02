@@ -315,7 +315,7 @@ def _accum(lst, iss):
             cell[1] = _fact_fn()(cell[1])
     return lst
 
-def build_jqplot(q_dict, db_fn):#todo: 1. refactor the returned data structure for jqplot usage. 2. test the "if" part of the q_dict works.
+def sum_up(q_dict, db_fn):#todo: 1. refactor the returned data structure for jqplot usage. 2. test the "if" part of the q_dict works.
     '''Build a datastructure for jqplot like:
         [{  cht:"bd|line|pie|...",
             flt:[ [dim1id,dim1nm,[(dv11, dv11str), (dv12, dv12str),...]],
@@ -338,21 +338,19 @@ def build_jqplot(q_dict, db_fn):#todo: 1. refactor the returned data structure f
     ...         "on":[1,[1,3,2]], #category: author
     ...         "if":[[6,[1]], [10, [1,[2,5]]]],#tracker and version
     ...         "of":[8, [2,1,3]]} #serail: priority
-    >>> plot = build_jqplot(q_dict, dbfn)
-    >>> plot[0]['cht], plot[0]['ser']
-    ()
+    >>> plot = sum_up(q_dict, dbfn)
     >>> plot[1:]
     [(2, 0, 0), (0, 1, 1), (0, 0, 0)]
     >>> q_dict = {"c":"line",
     ...         "on":[1,[1,3,2]], #category: author
     ...         "if":[[6,[1]], [10, [1,[2,5]]]]} #tracker and version
-    >>> build_jqplot(q_dict, dbfn)
+    >>> sum_up(q_dict, dbfn)
     [[1, [1, 2, 3]], (2, 1, 1)]
     >>> q_dict = {"c":"line", # two test: 1. range OVER list values(use "on"), 2. sum is correct
     ...         "on":[3,["120513",["130813","130815"]]], #category: updated_on. the individual value "120513" will be ignored
     ...         "if":[[6,[1]]],# tracker
     ...         "of":[8, [2,1,3]]} #serail: priority
-    >>> plot = build_jqplot(q_dict, dbfn)
+    >>> plot = sum_up(q_dict, dbfn)
     >>> plot[0]
     [3, ['130813', '130814', '130815'], 8, [1, 2, 3]]
     >>> plot[1:]
@@ -406,7 +404,7 @@ def _build_tpl(q):
     q_dict = json.loads(q)
     tpl_vars.update(cmd_txt = reform_cmd(q_dict))
     try:
-        tpl_vars.update(jqdata = json.dumps(build_jqplot(q_dict, q_db)))
+        tpl_vars.update(jqdata = json.dumps(sum_up(q_dict, q_db)))
     except Exception as err:
         traceback.print_exc()
         tpl_vars.update(err=str(err))
