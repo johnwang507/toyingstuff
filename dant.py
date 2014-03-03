@@ -3,7 +3,7 @@
 # A vanilla crawler which collect short text from search engine. by John Wang(john.wang.wjq@gmail) in Mar/2014
 # Require Python >= 2.7
 
-import sys, os, signal, argparse, bs4, requests, urllib, codecs, traceback
+import sys, os, re, signal, argparse, bs4, requests, urllib, codecs, traceback
 
 SITES_SHORTCUTS = (
     ('g', ('g_parser', 'g_filter', 'g_roller', "http://www.google.com.hk", "/search?q=" )), # Google
@@ -32,21 +32,22 @@ def get_args():
             if not args.keywords:
                 return _exit_w_info('Searching keywords not specified.')
         args.timeout = args.timeout / 1000.0
-        if args.output_to:
-            if os.path.exists(args.output_to):
-                if not os.path.isdir(args.output_to):return _exit_w_info('"%s" is not a valid folder' % args.output_to)
+        if args.output_dir:
+            if os.path.exists(args.output_dir):
+                if not os.path.isdir(args.output_dir):return _exit_w_info('"%s" is not a valid folder' % args.output_dir)
             else :
-                os.mkdir(args.output_to)
+                os.mkdir(args.output_dir)
         return args
     crw_opts = parser.add_argument_group('Crawling Options')
     crw_opts.add_argument('-s','--site', default=SITES_SHORTCUTS[0][0],
-        help=('The URL into which we dive. Shortcut can be used: %s' % ', '.join(['"%s" for "%s"' % (sc, cfg[2]) for sc, cfg in SITES_SHORTCUTS])))
+        help=('The URL into which we dive. Shortcut can be used: %s' % ', '.join(['"%s" for "%s"' % (sc, cfg[3]) for sc, cfg in SITES_SHORTCUTS])))
     crw_opts.add_argument('-t','--timeout', type=int, default=4444, help="How many milliseconds before we give up waiting for response on a request.")
     crw_opts.add_argument('-d','--depth',type=int, default=1, help="How deep to follow the links.")
-    crw_opts.add_argument('-r','--roll_times',type=int, default=2, help="How many result pages to roll on search engine site(e.g., Google).")
+    crw_opts.add_argument('-p','--paginate_times',type=int, default=2, help="How many result pages to load on search engine site(e.g., Google).")
     crw_opts.add_argument('keywords', metavar='W', nargs='*', help='The keywords for a search engine site')
     output_opts = parser.add_argument_group('Output Options')
-    output_opts.add_argument('-o','--output_to', help="The folder where the output files go. If absent, the output will be print on screen.")
+    output_opts.add_argument('-o','--output_dir', help="The output folder. If absent, the output will go to screen.")
+    output_opts.add_argument('-l','--dir_limit', type=int, default=3000, help="If the number of files in the output folder exceed this value, new output folder will be created with incremental number suffix in the name. ")
     output_opts.add_argument('-v','--verbose', action='store_true', help="Print out log info while running.")
     output_opts.add_argument('-c','--encoding', default='UTF-8', help="The encoding used for output and url params.")
     cnt_opts = parser.add_argument_group('Content Options')
@@ -59,13 +60,19 @@ def output(doc):
     _data = unicode(doc)
     CTX.file_idx = CTX.file_idx+1
     CTX.all_bytes = CTX.all_bytes + len(_data)
-    if not CTX.args.output_to:
+    if not CTX.args.output_dir:
         print _data.encode('unicode_escape')
     else:
-        with codecs.open(os.path.join(CTX.args.output_to, str(CTX.file_idx)), 'w', CTX.args.encoding) as f:
+        dir_idx = int(CTX.file_idx // CTX.args.dir_limit)           
+        outdir = os.path.abspath(CTX.args.output_dir)
+        if dir_idx > 0:
+            outdir = outdir + str(dir_idx)
+            if not os.path.exists(outdir):
+                os.mkdir(outdir)
+        with codecs.open(os.path.join(outdir, CTX.args.site[0] + str(CTX.file_idx)), 'w', CTX.args.encoding) as f:
             f.write(_data)
 
-def mk_soup(link): # todo: should return real url(redirected if any) and soup
+def suck_soup(link):
     if not link:return None,None
     trk, _, tail = link.rpartition('.')
     if trk and (tail.lower() in MEDIA_SUFFIX): # Ignore media type
@@ -74,14 +81,15 @@ def mk_soup(link): # todo: should return real url(redirected if any) and soup
     try:
         if CTX.args.verbose: print 'loading page:', link
         heads = requests.head(link, timeout=CTX.args.timeout)
-        ctype = heads.headers['content-type'].split(';')[0]
-        if ctype.lower() in ('text/html', 'text/plain'): # Some links look not like rich media, but still we need to check.
+        raw_ctype = heads and heads.headers.get('content-type',None)
+        ctype = raw_ctype and raw_ctype.split(';')[0]
+        if ctype and (ctype.lower() in ('text/html', 'text/plain')): # Some links look not like rich media, but still we need to check.
             response = requests.get(link, timeout=CTX.args.timeout)
             soup = None if (response.status_code != requests.codes.ok) else bs4.BeautifulSoup(response.text)
             return soup, response.url
         else:
-            if CTX.args.verbose: print ctype, 'content ignored.'
-            if trk: MEDIA_SUFFIX.append(tail.lower()) # Add more trailling suffix to filter out the media links for following process.
+            if CTX.args.verbose: print ctype, 'content-type ignored.'
+            if trk and ctype: MEDIA_SUFFIX.append(tail.lower()) # Add more trailling suffix to filter out the media links for following process.
     except requests.exceptions.Timeout:
         if CTX.args.verbose: print 'Request timeout on', link
     except:
@@ -137,20 +145,20 @@ def mk_flink(link, plink):
     return link if link.lower().startswith('http://') else ('http://' + plink.split('/')[2] + link)
 
 def follow(link, level=0):
-    soup, realink = mk_soup(link)
+    soup, realink = suck_soup(link)
     if not soup:return
     output(dict(PICKED_DOM_ELE)[CTX.args.picked_element][1](soup))
     if level >= CTX.args.depth: return
     [follow(mk_flink(anch.get('href', None), realink), level+1) for anch in soup.find_all('a')]
 
 def roll_search(url, sparser, sfilter, roller, curr_pidx=1):
-    soup, realink = mk_soup(url)
+    soup, realink = suck_soup(url)
     if not soup:return
     for link, doc in parse_se_page(soup, sparser, sfilter):
         output(doc)
         if link and CTX.args.depth > 0:
             follow(mk_flink(link, realink), 1)
-    if curr_pidx < CTX.args.roll_times:
+    if curr_pidx < CTX.args.paginate_times:
         next_link = roll_se_page(soup, roller, curr_pidx)
         return next_link and roll_search(mk_flink(next_link, realink), sparser, sfilter, roller, curr_pidx+1)
 
