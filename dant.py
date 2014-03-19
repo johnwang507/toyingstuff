@@ -13,7 +13,7 @@ SITES_SHORTCUTS = (
 
 PICKED_DOM_ELE = (('h', ('html', lambda x:x)), ('b', ('body', lambda x:x.body)), ('t', ('all text', lambda x:x.text)))
 
-MEDIA_SUFFIX = ['js', 'css', 'jpeg', 'jpg', 'png', 'bmp', 'gif', 'mp3', 'mp4', 'zip', 'tgz', 'gz', 'rar', ]
+MEDIA_SUFFIX = ['js', 'css', 'jpeg', 'jpg', 'png', 'bmp', 'gif', 'mp3', 'mp4', 'pdf', 'zip', 'tgz', 'gz', 'rar', 'bz2']
 
 # Small utility functions
 listlen = lambda x:len(x) if x else 0
@@ -80,16 +80,9 @@ def suck_soup(link):
         return None,None
     try:
         if CTX.args.verbose: print 'loading page:', link
-        heads = requests.head(link, timeout=CTX.args.timeout)
-        raw_ctype = heads and heads.headers.get('content-type',None)
-        ctype = raw_ctype and raw_ctype.split(';')[0]
-        if ctype and (ctype.lower() in ('text/html', 'text/plain')): # Some links look not like rich media, but still we need to check.
-            response = requests.get(link, timeout=CTX.args.timeout)
-            soup = None if (response.status_code != requests.codes.ok) else bs4.BeautifulSoup(response.text)
-            return soup, response.url
-        else:
-            if CTX.args.verbose: print ctype, 'content-type ignored.'
-            if trk and ctype: MEDIA_SUFFIX.append(tail.lower()) # Add more trailling suffix to filter out the media links for following process.
+        response = requests.get(link, timeout=CTX.args.timeout)
+        soup = None if (response.status_code != requests.codes.ok) else bs4.BeautifulSoup(response.text)
+        return soup, response.url
     except requests.exceptions.Timeout:
         if CTX.args.verbose: print 'Request timeout on', link
     except:
@@ -110,13 +103,14 @@ def b_parser(soup):
 def b_filter(soup):
     return soup.find('div',{'id':'results'}).find_all('li', 'sa_wr')
 def b_roller(soup, curr_pidx):
-    return soup.find('div','sb_pag').select('li > a.sb_pagN')
+    nextlinks = soup.find('div','sb_pag').select('li > a.sb_pagN')
+    return nextlinks[0]['href'] if nextlinks else None
 
  # Baidu
 def d_parser(soup):
     return soup.h3.a.get('href', None), soup.h3.next_sibling.text
 def d_filter(soup):
-    return soup.find_all('table','result')
+    return soup.find_all('div', 'c-container')
 def d_roller(soup, curr_pidx):
     return soup.find('p', {"id": "page"}).find('a','n')['href']
 
@@ -141,7 +135,7 @@ def roll_se_page(soup, roller, curr_pidx):
         if CTX.args.verbose: print 'Roll to last page or there is an error: ', exp
 
 def mk_flink(link, plink):
-    if not link or link.startswith('#'):return None
+    if not link or link.startswith('#'): return None
     return link if link.lower().startswith('http://') else ('http://' + plink.split('/')[2] + link)
 
 def follow(link, level=0):
@@ -177,5 +171,3 @@ if __name__ == '__main__':
     signal.signal(signal.SIGINT, lambda x,y:sys.exit(0))
     _main()
     print 'Done. Total %s files, %s bytes' % (CTX.file_idx, '{:,}'.format(CTX.all_bytes))
-
-    
