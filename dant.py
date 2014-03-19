@@ -11,7 +11,7 @@ SITES_SHORTCUTS = (
     ('d', ('d_parser', 'd_filter', 'd_roller', "http://www.baidu.com",     "/s?wd="      )), # Baidu
     )
 
-PICKED_DOM_ELE = (('h', ('html', lambda x:x)), ('b', ('body', lambda x:x.body)), ('t', ('all text', lambda x:x.text)))
+PICKED_DOM_ELE = (('h', ('html', lambda x:x)), ('b', ('body', lambda x:x.body)), ('t', ('all text', lambda x:(x.body) and x.body.text) ))
 
 MEDIA_SUFFIX = ['js', 'css', 'jpeg', 'jpg', 'png', 'bmp', 'gif', 'mp3', 'mp4', 'pdf', 'zip', 'tgz', 'gz', 'rar', 'bz2']
 
@@ -66,7 +66,7 @@ def output(doc):
         dir_idx = int(CTX.file_idx // CTX.args.dir_limit)           
         outdir = os.path.abspath(CTX.args.output_dir)
         if dir_idx > 0:
-            outdir = outdir + str(dir_idx)
+            outdir = outdir + '_' + str(dir_idx)
             if not os.path.exists(outdir):
                 os.mkdir(outdir)
         with codecs.open(os.path.join(outdir, CTX.args.site[0] + str(CTX.file_idx)), 'w', CTX.args.encoding) as f:
