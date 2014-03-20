@@ -57,11 +57,10 @@ def get_args():
     return _validate(args)
 
 def output(doc):
-    _data = unicode(doc)
     CTX.file_idx = CTX.file_idx+1
-    CTX.all_bytes = CTX.all_bytes + len(_data)
+    CTX.all_bytes = CTX.all_bytes + len(doc)
     if not CTX.args.output_dir:
-        print _data.encode('unicode_escape')
+        print doc.encode('unicode_escape')
     else:
         dir_idx = int(CTX.file_idx // CTX.args.dir_limit)           
         outdir = os.path.abspath(CTX.args.output_dir)
@@ -69,19 +68,19 @@ def output(doc):
             outdir = outdir + '_' + str(dir_idx)
             if not os.path.exists(outdir):
                 os.mkdir(outdir)
-        with codecs.open(os.path.join(outdir, CTX.args.site[0] + str(CTX.file_idx)), 'w', CTX.args.encoding) as f:
-            f.write(_data)
+        with open(os.path.join(outdir, CTX.args.site[0] + str(CTX.file_idx)), 'w') as f:
+            f.write(doc.encode(CTX.args.encoding))
 
 def suck_soup(link):
     if not link:return None,None
     trk, _, tail = link.rpartition('.')
-    if trk and (tail.lower() in MEDIA_SUFFIX): # Ignore media type
+    if trk and (tail and (tail.lower() in MEDIA_SUFFIX)): # Ignore media type
         if CTX.args.verbose:print 'Ignore media link', link
         return None,None
     try:
         if CTX.args.verbose: print 'loading page:', link
         response = requests.get(link, timeout=CTX.args.timeout)
-        soup = None if (response.status_code != requests.codes.ok) else bs4.BeautifulSoup(response.text)
+        soup = None if (response.status_code != requests.codes.ok) else bs4.BeautifulSoup(response.content)
         return soup, response.url
     except requests.exceptions.Timeout:
         if CTX.args.verbose: print 'Request timeout on', link
@@ -141,7 +140,8 @@ def mk_flink(link, plink):
 def follow(link, level=0):
     soup, realink = suck_soup(link)
     if not soup:return
-    output(dict(PICKED_DOM_ELE)[CTX.args.picked_element][1](soup))
+    doc = dict(PICKED_DOM_ELE)[CTX.args.picked_element][1](soup)
+    if doc: output(doc)
     if level >= CTX.args.depth: return
     [follow(mk_flink(anch.get('href', None), realink), level+1) for anch in soup.find_all('a')]
 
@@ -149,7 +149,7 @@ def roll_search(url, sparser, sfilter, roller, curr_pidx=1):
     soup, realink = suck_soup(url)
     if not soup:return
     for link, doc in parse_se_page(soup, sparser, sfilter):
-        output(doc)
+        if doc: output(doc)
         if link and CTX.args.depth > 0:
             follow(mk_flink(link, realink), 1)
     if curr_pidx < CTX.args.paginate_times:
