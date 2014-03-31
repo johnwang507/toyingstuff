@@ -19,6 +19,7 @@ MEDIA_SUFFIX = ['bat','dll','so', 'exe','class','o','lo','la','a','bin','sh','da
 def pick_text(x):
     if not x.body:return None
     for sc in x.body.find_all('script'):sc.decompose()
+    for sc in x.body.find_all('style'):sc.decompose()
     eles = [el.string.strip() for el in x.body.descendants if isinstance(el, bs4.element.NavigableString)]
     return '\n'.join([el for el in eles if el])
 
@@ -123,17 +124,21 @@ def d_roller(soup, curr_pidx):
     return soup.find('p', {"id": "page"}).find('a','n')['href']
 
 def parse_se_page(soup, sect_parser, sect_filter):
-    def psect(sect):
-        try:
-            return sect_parser(sect) 
-        except:
-            if CTX.args.verbose:print traceback.print_exc()
-            return None
-    sections = sect_filter(soup)
-    if CTX.args.verbose: print listlen(sections), 'search results found.'
-    sects = sections and [psect(sc) for sc in sections]
+    # def psect(sect):
+    #     try:
+    #         return sect_parser(sect) 
+    #     except:
+    #         if CTX.args.verbose:print traceback.print_exc()
+    #         return None
+    try:
+        sections = sect_filter(soup)
+        if CTX.args.verbose: print listlen(sections), 'search results found.'
+        sects = sections and [sect_parser(sc) for sc in sections]
+        if CTX.args.verbose: print listlen(rt), 'search result parsed.'
+    except:
+        if CTX.args.verbose:print traceback.print_exc()
+        return []
     rt = sects and [sect for sect in sects if sect]
-    if CTX.args.verbose: print listlen(rt), 'search result parsed.'
     return rt
 
 def roll_se_page(soup, roller, curr_pidx):
