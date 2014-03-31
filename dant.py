@@ -11,9 +11,18 @@ SITES_SHORTCUTS = (
     ('d', ('d_parser', 'd_filter', 'd_roller', "http://www.baidu.com",     "/s?wd="      )), # Baidu
     )
 
-PICKED_DOM_ELE = (('h', ('html', lambda x:x)), ('b', ('body', lambda x:x.body)), ('t', ('all text', lambda x:(x.body) and x.body.text) ))
+MEDIA_SUFFIX = ['bat','dll','so', 'exe','class','o','lo','la','a','bin','sh','dat',
+                'js', 'css', 'jpeg', 'jpg', 'png', 'bmp', 'gif',
+                'mp3', 'mp4', 'mkv', 'avi','3gp','mpeg', 
+                'zip', 'tgz', 'gz', 'rar', 'bz2','jar']
+                
+def pick_text(x):
+    if not x.body:return None
+    for sc in x.body.find_all('script'):sc.decompose()
+    eles = [el.string.strip() for el in x.body.descendants if isinstance(el, bs4.element.NavigableString)]
+    return '\n'.join([el for el in eles if el])
 
-MEDIA_SUFFIX = ['js', 'css', 'jpeg', 'jpg', 'png', 'bmp', 'gif', 'mp3', 'mp4', 'pdf', 'zip', 'tgz', 'gz', 'rar', 'bz2']
+PICKED_DOM_ELE = (('h', ('html', lambda x:x)), ('b', ('body', lambda x:x.body)), ('t', ('all text', pick_text) ))
 
 # Small utility functions
 listlen = lambda x:len(x) if x else 0
