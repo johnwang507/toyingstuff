@@ -24,7 +24,7 @@ if __name__ == '__main__':
             and (nt-os.path.getmtime(root))<args.from_time]
     for d in modirs:
         if args.destination:
-            destp = os.path.join(args.destination, os.path.dirname(d[len(args.root_dir)+1:]))
+            destp = os.path.join(args.destination, d[len(args.root_dir)+1:])
             if not os.path.exists(destp):
                 os.makedirs(destp)
             for f in os.listdir(d):
