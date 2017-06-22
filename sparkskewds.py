@@ -24,6 +24,7 @@ def genRand(skew_sch, caterng):
                 for _ in range(num[i/step])]
             for i in range(0, caterng, step)],
         [])
+    print '=>',
     return random.sample(vals, len(vals))
 
 def genr(skewschm, caterng, fact_cands):
@@ -31,6 +32,7 @@ def genr(skewschm, caterng, fact_cands):
     col_keys = range(row_num)
     col_cates = genRand(skewschm, caterng)
     col_facts = (random.choice(range(fact_cands)) for _ in range(row_num))
+    print '\b\b=>',
     return zip(col_keys, col_cates, col_facts)
 
 def splitr(rows, partnums):
@@ -41,11 +43,12 @@ def splitr(rows, partnums):
         start = end
     yield rows[start:]
 
-# def outf(rows, outpath, fweights, gz_out):
 def rowparts(rows, fweights):
     tweight,totalnum = sum(fweights), len(rows)
+    if len(fweights) <2:
+        return [rows]
     partnums = [int(1.0*totalnum * w/tweight+i%2) for i,w in enumerate(fweights)]
-    return splitr(rows, partnums)
+    return list(splitr(rows, partnums))
 
 def get_args():
     parser = argparse.ArgumentParser(description='''
@@ -73,18 +76,31 @@ generate a dataset with 3 columns, i.e., "id", "category", "fact". You can set s
     args.file_weights = [int(i.strip()) for i in args.file_weights.split(',')]
     return args
 
-def genfobj(path, idx, gz):
+def genfobj(path, gz, idx=None):
     if gz:
         return gzip.open('%s_%s.%s'%(path, idx, 'gz'), 'wb')
     else:
         return open('%s_%s'%(path, idx), 'w')
 
+def writefiles(path, gz, filerows, partno=None):
+    fpath = (partno is None and path) or '%s_%s'%(path, partno)
+    fobj = (gz and gzip.open(fpath+'.gz', 'wb')) or open(fpath, 'w')
+    content = '\n'.join(','.join(str(c) for c in r) for r in filerows)
+    fobj.write(content)
+    fobj.close()
+
 if __name__ == '__main__':
     args = get_args()
     rows = genr(args.skew_schema, args.cate_range, args.fact_range)
-    for idx, filerows in enumerate(rowparts(rows, args.file_weights)):
-        fobj = genfobj(args.outpath, idx, args.gz_out)
-        content = '\n'.join(','.join(str(c) for c in r) for r in filerows)
-        fobj.write(content)
-        fobj.close()
+    file_parts = rowparts(rows, args.file_weights)
+    print '\b\b=>',
+    if len(file_parts)==1:
+        writefiles(args.outpath, args.gz_out, file_parts[0])
+    else:
+        for idx, filerows in enumerate(file_parts):
+            print '\b\b=>',
+            writefiles(args.outpath, args.gz_out, filerows, idx)
+    print '\b\b=> OK'
+    print len(rows), 'rows generated in', len(file_parts), 'files.'
+
 
